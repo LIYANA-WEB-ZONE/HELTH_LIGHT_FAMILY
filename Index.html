@@ -21,11 +21,10 @@
     background:var(--bg);
     color:#111827;
     display:flex;
-    justify-content:flex-start;   /* උඩට align වෙයි */
-    align-items:center;           /* මැදට horizontally align වෙයි */
+    justify-content:center;
+    align-items:flex-start;
     flex-direction:column;
-    min-height:100vh;
-    padding-top:40px;
+    padding:28px;
   }
   .wrap{
     width:100%;
@@ -33,12 +32,9 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:0 16px; /* phone වලත් sides එක smooth වෙන්න */
-    box-sizing:border-box;
   }
   .panel{
     width:var(--panel-w);
-    max-width:100%; /* phone වල overflow වෙන එක නැතිවෙයි */
     background:var(--card);
     border-radius:var(--radius);
     padding:18px;
@@ -78,22 +74,15 @@
   .val{font-weight:700;font-size:15px}
   .paragraph{margin-top:8px;color:#222;line-height:1.5;font-size:14px}
   .footer-note{margin-top:14px;color:var(--muted);font-style:italic;font-size:13px}
-  
-  /* 📱 Responsive */
-  @media (max-width:480px){
-    body{
-      align-items:stretch; /* phone වලට full width වෙන්න */
-      padding-top:20px;
-    }
-    .wrap{align-items:stretch}
-    .panel{width:100%;border-radius:10px}
-  }
+  @media (max-width:480px){.panel{width:100%}}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="panel verify-panel" id="verifyPanel">
-      <div class="brand"></div>
+      <div class="brand">
+  
+      </div>
       <div class="field">
         <label>Medical Report Number</label>
         <input id="mcNo" placeholder="" />
