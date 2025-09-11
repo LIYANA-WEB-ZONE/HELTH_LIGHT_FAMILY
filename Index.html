@@ -21,10 +21,11 @@
     background:var(--bg);
     color:#111827;
     display:flex;
-    justify-content:center;
-    align-items:flex-start;
+    justify-content:flex-start;   /* උඩට align */
+    align-items:center;           /* මැදට horizontally align */
     flex-direction:column;
-    padding:28px;
+    min-height:100vh;
+    padding-top:40px;             /* panels උඩින් space */
   }
   .wrap{
     width:100%;
@@ -80,9 +81,7 @@
 <body>
   <div class="wrap">
     <div class="panel verify-panel" id="verifyPanel">
-      <div class="brand">
-  
-      </div>
+      <div class="brand"></div>
       <div class="field">
         <label>Medical Report Number</label>
         <input id="mcNo" placeholder="" />
