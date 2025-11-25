@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MC Verify — Certificate View</title>
+<style>
+  :root{
+    --bg:#e9f0f8;
+    --card:#ffffff;
+    --muted:#6b7280;
+    --accent:#0b63d3;
+    --shadow:0 12px 30px rgba(18,38,63,.12);
+    --radius:12px;
+    --panel-w:420px;
+    font-family:"Helvetica Neue",Arial,sans-serif;
+  }
+  html{font-size:14px}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:#111827;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    flex-direction:column;
+    padding:28px;
+  }
+  .wrap{
+    width:100%;
+    max-width:880px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .panel{
+    width:var(--panel-w);
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+    position:relative;
+  }
+  .verify-panel{display:flex;flex-direction:column;align-items:center}
+  .brand{text-align:center;margin-bottom:16px}
+  .brand img{max-width:120px;height:auto}
+  .field{width:100%;margin-bottom:12px;text-align:center}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  input{
+    width:100%;padding:12px 14px;border-radius:8px;border:1px solid #e6eef8;
+    font-size:16px;box-sizing:border-box;text-align:center;appearance:none
+  }
+  input::-webkit-inner-spin-button,
+  input::-webkit-outer-spin-button,
+  input::-webkit-clear-button{appearance:none;margin:0}
+  .btn{
+    background:var(--accent);color:#fff;border:none;padding:12px 16px;
+    font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(11,99,211,.16);
+    border-radius:8px;width:100%;margin-top:8px
+  }
+  .muted{color:var(--muted);font-size:14px;margin-top:10px;min-height:18px;text-align:center}
+  .certificate-panel{
+    background:linear-gradient(180deg,#ffffff,#fbfdff);
+    border:1px solid rgba(15,23,42,.04);
+  }
+  .cert-logo{position:absolute;top:18px;right:18px;width:60px;height:auto}
+  .clinic{font-weight:700;font-size:22px;line-height:1.05;margin-bottom:6px}
+  .clinic-sub{font-size:13px;color:var(--muted);margin-bottom:18px}
+  .title{text-align:center;font-weight:800;font-size:20px;margin:6px 0 12px}
+  .meta{text-align:center;color:var(--muted);margin-bottom:4px}
+  .row{display:block;margin-bottom:10px}
+  .label{display:block;color:var(--muted);font-size:13px;margin-bottom:4px}
+  .val{font-weight:700;font-size:15px}
+  .paragraph{margin-top:8px;color:#222;line-height:1.5;font-size:14px}
+  .footer-note{margin-top:14px;color:var(--muted);font-style:italic;font-size:13px}
+  @media (max-width:480px){.panel{width:100%}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel verify-panel" id="verifyPanel">
+      <div class="brand">
+  
+      </div>
+      <div class="field">
+        <label>Medical Report Number</label>
+        <input id="mcNo" placeholder="" />
+      </div>
+      <div class="field">
+        <label>NRIC / Passport No.</label>
+        <input id="nric" placeholder="" />
+      </div>
+      <button id="verifyMcBtn" class="btn">Verify</button>
+      <div id="msg" class="muted"></div>
+    </div>
+
+    <div class="panel certificate-panel" id="certificatePanel" aria-hidden="true" style="display:none;">
+      <img src="Panel Logo.svg" alt="Logo" class="cert-logo" />
+      <div class="clinic">
+        HealthLight Family<br />Medicine Clinic
+      </div>
+      <div class="clinic-sub">
+        Blk 601 Choa Chu Kang Street 62<br />#01-09 Singapore 680601
+      </div>
+      <div class="title">MEDICAL CERTIFICATE</div>
+      <div class="meta">No: <span id="c_mc">—</span></div>
+      <div class="meta">Issued date: <span id="c_issued">—</span></div>
+      <div class="row">
+        <div class="label">Name</div>
+        <div id="c_name" class="val">—</div>
+      </div>
+      <div class="row">
+        <div class="label">NRIC/Passport number</div>
+        <div id="c_nric" class="val">—</div>
+      </div>
+      <div class="row">
+        <div class="label">Start Date</div>
+        <div id="c_start" class="val">—</div>
+      </div>
+      <div class="row">
+        <div class="label">End Date</div>
+        <div id="c_end" class="val">—</div>
+      </div>
+      <div class="row">
+        <div class="label">Type of medical leave granted</div>
+        <div id="c_type" class="val">Medical Certificate</div>
+      </div>
+      <div class="paragraph" id="c_statement">
+        This is to certify that the patient is unfit for duty for a period of
+        <b id="c_days">—</b> day(s).
+      </div>
+      <div class="row" style="margin-top:14px;">
+        <div class="label">Issued by</div>
+        <div id="c_doctor" class="val">—</div>
+      </div>
+      <div class="footer-note">
+        This MC is not valid for Court Attendance or Police Report
+      </div>
+    </div>
+  </div>
+
+<script>
+  const sampleDB = {
+    "3289171|M0493938N": {
+      name: "H. W. Deshaka Dinendra",
+      nric: "M0493938N",
+      mcNo: "3289171",
+      issued: "26/11/2025",
+      start: "26/11/2025",
+      end: "27/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+     "3289170|M3260573N": {
+      name: "H. M. Shashikala Hennayaka",
+      nric: "M3260573N",
+      mcNo: "3289170",
+      issued: "18/11/2025",
+      start: "18/11/2025",
+      end: "18/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+      
+      "3289169|M3260573N": {
+      name: "H. M. Shashikala Hennayaka",
+      nric: "M3260573N",
+      mcNo: "3289169",
+      issued: "01/11/2025",
+      start: "01/11/2025",
+      end: "01/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289168|M4346398L": {
+      name: "Alawathura Ralalage Buddika Lakmal",
+      nric: "M4346398L",
+      mcNo: "3289168",
+      issued: "20/11/2025",
+      start: "20/11/2025",
+      end: "20/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+      
+    "3289167|M0402224J": {
+      name: "Rathnayaka Gamage Pubudu Nimsara",
+      nric: "M0402224J",
+      mcNo: "3289167",
+      issued: "22/11/2025",
+      start: "22/11/2025",
+      end: "23/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289166|M4285853J": {
+      name: "Sagayaraj Jacquline",
+      nric: "M4285853J",
+      mcNo: "3289166",
+      issued: "21/11/2025",
+      start: "21/11/2025",
+      end: "21/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+     "3289165|M0341088Q": {
+      name: "Suleiman Mohamed Mohomed Riswan",
+      nric: "M0341088Q",
+      mcNo: "3289165",
+      issued: "20/11/2025",
+      start: "20/11/2025",
+      end: "21/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289164|M0516405W": {
+      name: "Omkar Singh",
+      nric: "M0516405W",
+      mcNo: "3289164",
+      issued: "19/11/2025",
+      start: "19/11/2025",
+      end: "20/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289163|M0480466R": {
+      name: "K.L. Akash Sajahan Perera",
+      nric: "M0480466R",
+      mcNo: "3289163",
+      issued: "20/11/2025",
+      start: "20/11/2025",
+      end: "20/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289162|M0399121T": {
+      name: "Hetti Arachchige Shewan Rishmika Hettiarachchi",
+      nric: "M0399121T",
+      mcNo: "3289162",
+      issued: "03/11/2025",
+      start: "03/11/2025",
+      end: "04/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289161|M0336752L": {
+      name: "Kande Arachchilage Namal Nishshanka",
+      nric: "M0336752L",
+      mcNo: "3289161",
+      issued: "19/11/2025",
+      start: "19/11/2025",
+      end: "19/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289160|S9439341H": {
+      name: "Yeo Sue Yun",
+      nric: "S9439341H",
+      mcNo: "3289160",
+      issued: "19/11/2025",
+      start: "19/11/2025",
+      end: "20/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289159|M0362090L": {
+      name: "Priyanshi Sharma",
+      nric: "M0362090L",
+      mcNo: "3289159",
+      issued: "17/11/2025",
+      start: "17/11/2025",
+      end: "17/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289158|M0421109R": {
+      name: "Imiya Ralalage Thulara Diyamantha Senarathna",
+      nric: "M0421109R",
+      mcNo: "3289158",
+      issued: "18/11/2025",
+      start: "18/11/2025",
+      end: "18/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289157|M0434453N": {
+      name: "Munasingha Nadeesh Sanjana De Zoysa",
+      nric: "M0434453N",
+      mcNo: "3289157",
+      issued: "17/11/2025",
+      start: "17/11/2025",
+      end: "17/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289156|M0502967P": {
+      name: "Hewawasam Pathirannahalage Kavin Buwanaka Thilakasiri",
+      nric: "M0502967P",
+      mcNo: "3289156",
+      issued: "17/11/2025",
+      start: "17/11/2025",
+      end: "17/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289155|M0399610N": {
+      name: "A. Lakindu Oshadha",
+      nric: "M0399610N",
+      mcNo: "3289155",
+      issued: "17/11/2025",
+      start: "17/11/2025",
+      end: "17/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289154|M0503074Q": {
+      name: "Dissanayake Mudiyanselage Tharusha Umayanga",
+      nric: "M0503074Q",
+      mcNo: "3289154",
+      issued: "16/11/2025",
+      start: "16/11/2025",
+      end: "17/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289153|M0513010N": {
+      name: "Bhawna",
+      nric: "M0513010N",
+      mcNo: "3289153",
+      issued: "13/11/2025",
+      start: "13/11/2025",
+      end: "13/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289152|M4285853J": {
+      name: "Sagayaraj Jacquline",
+      nric: "M4285853J",
+      mcNo: "3289152",
+      issued: "17/11/2025",
+      start: "17/11/2025",
+      end: "17/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289151|M0394627K": {
+      name: "Hetti Arachchige Sahan Hishara Hetti Arachchi",
+      nric: "M0394627K",
+      mcNo: "3289151",
+      issued: "15/11/2025",
+      start: "15/11/2025",
+      end: "15/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289150|M0267650P": {
+      name: "Ilandarage Chanidu Vidus Kulasinghe",
+      nric: "M0267650P",
+      mcNo: "3289150",
+      issued: "13/11/2025",
+      start: "13/11/2025",
+      end: "13/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289149|M0362090L": {
+      name: "Priyanshi Sharma",
+      nric: "M0362090L",
+      mcNo: "3289149",
+      issued: "13/11/2025",
+      start: "13/11/2025",
+      end: "14/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+     "3289148|MO431844N": {
+      name: "Kumar Gaurav",
+      nric: "MO431844N",
+      mcNo: "3289148",
+      issued: "10/11/2025",
+      start: "10/11/2025",
+      end: "11/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289147|M0502967P": {
+      name: "Hewawasam Pathirannahalage Kavin Buwanaka Thilakasiri",
+      nric: "M0502967P",
+      mcNo: "3289147",
+      issued: "12/11/2025",
+      start: "12/11/2025",
+      end: "12/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289146|M0014073W": {
+      name: "Hasindu Nayanaka Muthukumarana",
+      nric: "M0014073W",
+      mcNo: "3289146",
+      issued: "12/11/2025",
+      start: "12/11/2025",
+      end: "12/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289145|M0436543N": {
+      name: "Kankanam Arachchige Chamith Geethanjana Samarathunga",
+      nric: "M0436543N",
+      mcNo: "3289145",
+      issued: "10/11/2025",
+      start: "10/11/2025",
+      end: "11/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289144|M0502967P": {
+      name: "Hewawasam Pathirannahalage Kavin Buwanaka Thilakasiri",
+      nric: "M0502967P",
+      mcNo: "3289144",
+      issued: "11/11/2025",
+      start: "11/11/2025",
+      end: "11/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289143|M0386942X": {
+      name: "Rathnayaka Achichillage Denura Deshan Bandara",
+      nric: "M0386942X",
+      mcNo: "3289143",
+      issued: "06/11/2025",
+      start: "06/11/2025",
+      end: "07/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289142|G4545638U": {
+      name: "Asuramana Pedige Agasthi Dushan Senadheera",
+      nric: "G4545638U",
+      mcNo: "3289142",
+      issued: "06/11/2025",
+      start: "06/11/2025",
+      end: "07/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289141|M0399610N": {
+      name: "A. Lakindu Oshadha",
+      nric: "M0399610N",
+      mcNo: "3289141",
+      issued: "07/11/2025",
+      start: "07/11/2025",
+      end: "07/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289140|M0381734W": {
+      name: "Manpreet Singh",
+      nric: "M0381734W",
+      mcNo: "3289140",
+      issued: "06/11/2025",
+      start: "06/11/2025",
+      end: "07/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289139|M0239860L": {
+      name: "Magulndamana Inda Siri Thero",
+      nric: "M0239860L",
+      mcNo: "3289139",
+      issued: "06/11/2025",
+      start: "06/11/2025",
+      end: "06/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289138|M0373491Q": {
+      name: "Manjaree Mandakini",
+      nric: "M0373491Q",
+      mcNo: "3289138",
+      issued: "05/11/2025",
+      start: "05/11/2025",
+      end: "05/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289137|T1518488J": {
+      name: "Crystaline Neo Yu Ying",
+      nric: "T1518488J",
+      mcNo: "3289137",
+      issued: "05/11/2025",
+      start: "05/11/2025",
+      end: "06/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289136|M0439382U": {
+      name: "Palugama Vidanaralalage Iresha Madushani Thilakarathna",
+      nric: "M0439382U",
+      mcNo: "3289136",
+      issued: "05/11/2025",
+      start: "05/11/2025",
+      end: "05/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289135|M3608035X": {
+      name: "Phyo Maung Maung",
+      nric: "M3608035X",
+      mcNo: "3289135",
+      issued: "05/11/2025",
+      start: "05/11/2025",
+      end: "05/11/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289134|M0409700Q": {
+      name: "Weerasingha Mudiyanselage Shashikala Nethmini Bandara",
+      nric: "M0409700Q",
+      mcNo: "3289134",
+      issued: "03/11/2025",
+      start: "03/11/2025",
+      end: "05/11/2025",
+      days: 3,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289133|G4545638U": {
+      name: "Asuramana Pedige Agasthi Dushan Senadheera",
+      nric: "G4545638U",
+      mcNo: "3289133",
+      issued: "03/11/2025",
+      start: "03/11/2025",
+      end: "04/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289132|M0358052T": {
+      name: "Gosai Datshanaben",
+      nric: "M0358052T",
+      mcNo: "3289132",
+      issued: "02/11/2025",
+      start: "02/11/2025",
+      end: "03/11/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289131|M3296025U": {
+      name: "Dinodi Perera",
+      nric: "M3296025U",
+      mcNo: "3289131",
+      issued: "28/10/2025",
+      start: "28/10/2025",
+      end: "28/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289130|M0228921T": {
+      name: "Rathnayaka Thilini Sewwandi",
+      nric: "M0228921T",
+      mcNo: "3289130",
+      issued: "27/10/2025",
+      start: "27/10/2025",
+      end: "28/10/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289129|M0490081W": {
+      name: "Walpita Gamage Senith Dilmith Yasanayake",
+      nric: "M0490081W",
+      mcNo: "3289129",
+      issued: "26/10/2025",
+      start: "26/10/2025",
+      end: "26/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289128|M0385870N": {
+      name: "Suhani",
+      nric: "M0385870N",
+      mcNo: "3289128",
+      issued: "26/10/2025",
+      start: "26/10/2025",
+      end: "26/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289127|M0393201R": {
+      name: "Deep Sharada",
+      nric: "M0393201R",
+      mcNo: "3289127",
+      issued: "25/10/2025",
+      start: "25/10/2025",
+      end: "26/10/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289126|M0441054P": {
+      name: "Ranhotige Sachintha Heshan Gunathilaka",
+      nric: "M0441054P",
+      mcNo: "3289126",
+      issued: "24/10/2025",
+      start: "24/10/2025",
+      end: "24/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289125|M0483277Q": {
+      name: "Jayasinghe Arachchilage Chathurya Vishmi Jayasinghe",
+      nric: "M0483277Q",
+      mcNo: "3289125",
+      issued: "21/10/2025",
+      start: "21/10/2025",
+      end: "22/10/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289124|M0426765J": {
+      name: "Budmini Sashindi Liyanaarachchi",
+      nric: "M0426765J",
+      mcNo: "3289124",
+      issued: "22/10/2025",
+      start: "22/10/2025",
+      end: "22/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289123|M0442207K": {
+      name: "Kalu Manannalage Minuja Kaushika Sandanayaka",
+      nric: "M0442207K",
+      mcNo: "3289123",
+      issued: "24/10/2025",
+      start: "24/10/2025",
+      end: "24/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289122|M0442247X": {
+      name: "Waleboda Heethagalage Oshadha Thasanda Kavishan",
+      nric: "M0442247X",
+      mcNo: "3289122",
+      issued: "24/10/2025",
+      start: "24/10/2025",
+      end: "24/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289121|M0492394K": {
+      name: "Perera Heshan Dinushka",
+      nric: "M0492394K",
+      mcNo: "3289121",
+      issued: "22/10/2025",
+      start: "22/10/2025",
+      end: "23/10/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289120|M0419781R": {
+      name: "Amarasingha Rathnaykge Kalpa Lakshan",
+      nric: "M0419781R",
+      mcNo: "3289120",
+      issued: "17/10/2025",
+      start: "17/10/2025",
+      end: "17/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289119|G4545638U": {
+      name: "Asuramana Pedige Agasthi Dushan Senadheera",
+      nric: "G4545638U",
+      mcNo: "3289119",
+      issued: "15/10/2025",
+      start: "15/10/2025",
+      end: "16/10/2025",
+      days: 2,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+    
+    "3289118|M0441061T": {
+      name: "Sanuka Hesara Senavirathna",
+      nric: "M0441061T",
+      mcNo: "3289118",
+      issued: "16/10/2025",
+      start: "16/10/2025",
+      end: "16/10/2025",
+      days: 1,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Valid"
+    },
+
+    "10288|N10169610": {
+      name: "Sulakshana Pramod",
+      nric: "N10169610",
+      mcNo: "10288",
+      issued: "15/08/2025",
+      start: "15/08/2025",
+      end: "17/08/2025",
+      days: 3,
+      doctor: "Dr Eugene LIM Ren Jie",
+      clinic: "HealthLight Family Medicine Clinic",
+      status: "Invalid"
+    }
+  };
+
+  // Auto-fill NRIC whenever MC Number changes
+  document.getElementById("mcNo").addEventListener("input", function(){
+    const mc = this.value.trim();
+    if(!mc) return;
+
+    let found = null;
+    for(const key in sampleDB){
+      if(sampleDB[key].mcNo === mc){
+        found = sampleDB[key];
+        break;
+      }
+    }
+
+    if(found){
+      document.getElementById("nric").value = found.nric;
+    } else {
+      document.getElementById("nric").value = "";
+      document.getElementById("msg").textContent = "";
+    }
+  });
+
+  // Verify button click
+  document.getElementById("verifyMcBtn").addEventListener("click", function(){
+    const mc = (document.getElementById("mcNo").value || "").trim();
+    const nric = (document.getElementById("nric").value || "").trim().toUpperCase();
+    const msgEl = document.getElementById("msg");
+
+    if(!mc || !nric){
+      msgEl.textContent = "Please enter both the MC Number and NRIC.";
+      msgEl.style.color = "#b91c1c";
+      return;
+    }
+
+    const key = mc + "|" + nric;
+    const entry = sampleDB[key];
+
+    if(!entry){
+      msgEl.textContent = "No record found for the given MC No. and NRIC.";
+      msgEl.style.color = "#b91c1c";
+      return;
+    }
+
+    document.getElementById("c_mc").textContent = entry.mcNo;
+    document.getElementById("c_issued").textContent = entry.issued;
+    document.getElementById("c_name").textContent = entry.name;
+    document.getElementById("c_nric").textContent = entry.nric;
+    document.getElementById("c_start").textContent = entry.start;
+    document.getElementById("c_end").textContent = entry.end;
+    document.getElementById("c_days").textContent = entry.days;
+    document.getElementById("c_doctor").textContent = entry.doctor;
+
+    const cert = document.getElementById("certificatePanel");
+    cert.style.display = "block";
+    cert.setAttribute("aria-hidden","false");
+
+    msgEl.textContent = "Record found. Certificate panel updated.";
+    msgEl.style.color = "#374151";
+    cert.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
